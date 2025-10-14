@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Any, Mapping
 from pathlib import Path
 import argparse
 
@@ -45,8 +45,8 @@ def load_emonet(n_expression: int, device: str):
     )
 
     print(f"Loading the emonet model from {state_dict_path}.")
-    state_dict = torch.load(str(state_dict_path), map_location="cpu")
-    state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
+    state_dict: Mapping[str, Any] = torch.load(str(state_dict_path), map_location="cpu")
+    state_dict = { k.replace("module.", ""): v for k, v in state_dict.items() }
     net = EmoNet(n_expression=n_expression).to(device)
     net.load_state_dict(state_dict, strict=False)
     net.eval()
@@ -123,7 +123,7 @@ def make_visualization(
     )
     frame_rgb = cv2.putText(
         frame_rgb,
-        emotion_classes[predicted_emotion_class_idx],
+        emotion_classes[int(predicted_emotion_class_idx)],
         ((face_bbox[0] + face_bbox[2]) // 2, face_bbox[1] + 50),
         cv2.FONT_HERSHEY_SIMPLEX,
         font_scale,
@@ -189,6 +189,8 @@ def make_visualization(
 
     return visualization
 
+
+#region - MAIN ---------------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
 
@@ -257,6 +259,10 @@ if __name__ == "__main__":
             # Only take the first detected face
             bbox = np.array(detected_faces[0]).astype(np.int32)
 
+            # FIX: Sometimes bbox[1] is negative (??)
+            if bbox[1] < 0:
+                bbox[1] = 0
+            
             face_crop = frame[bbox[1] : bbox[3], bbox[0] : bbox[2], :]
             emotion_prediction = run_emonet(emonet, face_crop.copy())
 
@@ -274,8 +280,8 @@ if __name__ == "__main__":
 
             visualization_frames.append(visualization)
 
-        if i % 100 == 0:
-            print(f"Ran prediction on {i}/{len(list_frames_rgb)} frames")
+        print(f"\nRan prediction on {i}/{len(list_frames_rgb)} frames", end="")
+    print("\ndone.")
 
     # Write the result as a video
     if visualization_frames:
