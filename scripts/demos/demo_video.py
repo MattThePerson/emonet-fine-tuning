@@ -40,9 +40,7 @@ def load_emonet(n_expression: int, device: str):
     """
 
     # Loading the model
-    state_dict_path = Path(__file__).parent.joinpath(
-        "pretrained", f"emonet_{n_expression}.pth"
-    )
+    state_dict_path = f"pretrained/emonet_{n_expression}.pth"
 
     print(f"Loading the emonet model from {state_dict_path}.")
     state_dict: Mapping[str, Any] = torch.load(str(state_dict_path), map_location="cpu")
@@ -78,7 +76,7 @@ def plot_valence_arousal(
     """
     Assumes valence and arousal in range [-1;1].
     """
-    circumplex_path = Path(__file__).parent / "images/circumplex.png"
+    circumplex_path = "media/images/circumplex.png"
 
     circumplex_image = cv2.imread(circumplex_path)
     circumplex_image = cv2.resize(circumplex_image, (circumplex_size, circumplex_size))
@@ -242,7 +240,7 @@ if __name__ == "__main__":
     sfd_detector = SFDDetector(device)
 
     print(f"Loading video")
-    video_path = Path(__file__).parent / args.video_path
+    video_path = args.video_path
     list_frames_rgb = load_video(video_path)
 
     visualization_frames = []
@@ -285,7 +283,7 @@ if __name__ == "__main__":
 
     # Write the result as a video
     if visualization_frames:
-        save_path = Path(__file__).parent / args.output_path
+        save_path = args.output_path
 
         out = cv2.VideoWriter(
             save_path,

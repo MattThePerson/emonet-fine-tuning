@@ -5,6 +5,7 @@
 __pycache__
 
 # custom
-media
+media/*
+!media/images
 runs
 data

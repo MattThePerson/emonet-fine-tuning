@@ -24,10 +24,10 @@ if __name__ == "__main__":
     device = 'cuda:0'
     image_size = 256
     emotion_classes = {0:"Neutral", 1:"Happy", 2:"Sad", 3:"Surprise", 4:"Fear", 5:"Disgust", 6:"Anger", 7:"Contempt"}
-    image_path = Path(__file__).parent / args.image_path
+    image_path = args.image_path
 
     # Loading the model 
-    state_dict_path = Path(__file__).parent.joinpath('pretrained', f'emonet_{n_expression}.pth')
+    state_dict_path = f'pretrained/emonet_{n_expression}.pth'
 
     print(f'Loading the model from {state_dict_path}.')
     state_dict = torch.load(str(state_dict_path), map_location='cpu')

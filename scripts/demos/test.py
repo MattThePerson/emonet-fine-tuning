@@ -17,14 +17,13 @@ from emonet.evaluation import evaluate, evaluate_flip
 
 torch.backends.cudnn.benchmark =  True
 
-DATASETS_PATH = r"A:\Documents/School/AffectiveComputing/datasets/affectnet"
-
 
 if __name__ == "__main__":
 
     #Parse arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--nclasses', type=int, default=8, choices=[5,8], help='Number of emotional classes to test the model on. Please use 5 or 8.')
+    parser.add_argument('--dataset_path', type=str, required=True, help='Path to dataset')
     args = parser.parse_args()
 
     # Parameters of the experiments
@@ -47,17 +46,17 @@ if __name__ == "__main__":
     print(f'Testing the model on {n_expression} emotional classes')
 
     print('Loading the data')
-    test_dataset_no_flip = AffectNet(root_path=DATASETS_PATH, subset=subset, n_expression=n_expression,
+    test_dataset_no_flip = AffectNet(root_path=args.dataset_path, subset=subset, n_expression=n_expression,
                             transform_image_shape=transform_image_shape_no_flip, transform_image=transform_image)
 
-    test_dataset_flip = AffectNet(root_path=DATASETS_PATH, subset=subset, n_expression=n_expression,
+    test_dataset_flip = AffectNet(root_path=args.dataset_path, subset=subset, n_expression=n_expression,
                             transform_image_shape=transform_image_shape_flip, transform_image=transform_image)
 
     test_dataloader_no_flip = DataLoader(test_dataset_no_flip, batch_size=batch_size, shuffle=False, num_workers=n_workers)
     test_dataloader_flip = DataLoader(test_dataset_flip, batch_size=batch_size, shuffle=False, num_workers=n_workers)
 
     # Loading the model 
-    state_dict_path = Path(__file__).parent.joinpath('pretrained', f'emonet_{n_expression}.pth')
+    state_dict_path = f'pretrained/emonet_{n_expression}.pth'
 
     print(f'Loading the model from {state_dict_path}.')
     state_dict: Mapping[str, Any] = torch.load(str(state_dict_path), map_location='cpu')

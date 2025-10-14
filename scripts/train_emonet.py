@@ -1,3 +1,6 @@
+""" 
+Script originally by Chengyi, Modified by Matt Stirling. 
+"""
 import argparse
 from pathlib import Path
 import json

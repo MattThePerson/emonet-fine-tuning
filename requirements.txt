@@ -1,5 +1,4 @@
-
-# pytorch installed with:
+# FIRST install pytorch
 #   pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 # in Sep 2025. Versions installed:
 #   torch==2.8.0+cu126
@@ -11,5 +10,7 @@ face-alignment==1.4.1
 
 numpy==2.1.2
 pandas
-tqdm
+matplotlib
+tqdm # used for displaying progress bar
 torchinfo
+ipykernel
