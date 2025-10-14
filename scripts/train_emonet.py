@@ -190,11 +190,11 @@ def main(args):
     # dataset paths
     train_csv =  args.dataset_root + os.sep + args.train_csv
     test_csv =   args.dataset_root + os.sep + args.test_csv
-    train_root = args.dataset_root + os.sep + args.train_root
-    test_root =  args.dataset_root + os.sep + args.test_root
+    train_root = args.dataset_root + os.sep + args.train_folder
+    test_root =  args.dataset_root + os.sep + args.test_folder
 
     # datasets
-    label2id = get_dataset_label2id(args.train_csv)
+    label2id = get_dataset_label2id(train_csv)
 
     # Datasets & loaders
     train_ds = EmoNetCSV(train_csv, train_root, size=args.size,
@@ -211,13 +211,20 @@ def main(args):
     model = EmoNet(n_expression=args.nclasses).to(device)
 
     # load pretrained weights
-    default_pretrained = Path(__file__).parent / "pretrained" / f"emonet_{args.nclasses}.pth"
     
-    if default_pretrained.exists():
-        print(f"Loading pretrained weights: {default_pretrained}")
-        state = torch.load(str(default_pretrained), map_location="cpu")
+    if args.pretrained_params is None:
+        res = input("\nWarning: no pretrained parameters passed, train model from scratch? (y)\n> ")
+        if res not in ["y", "yes", "Y"]:
+            print("quitting")
+            return
+    
+    else:
+        params_file = Path(args.pretrained_params)
+        if not params_file.exists():
+            raise FileExistsError(f"given params file doesnt exist: {params_file}")
+        print(f"Loading pretrained weights: {params_file}")
+        state = torch.load(str(params_file), map_location="cpu")
         state = { k.replace("module.", ""): v for k, v in state.items() }
-        
         model.load_state_dict(state, strict=False)
 
     # only train last layer by default
@@ -287,8 +294,11 @@ def main(args):
 
 #region CLI
 if __name__ == "__main__":
-
+    
+    default_pretrained = Path(__file__).parent / "pretrained" / f"emonet_{8}.pth"
+    
     ap = argparse.ArgumentParser()
+
     # data paths
     ap.add_argument("--pretrained_params", type=str)
     ap.add_argument("--dataset_root",  type=str, required=True,
@@ -297,10 +307,11 @@ if __name__ == "__main__":
                     help="CSV for training split (columns: pth[,label],valence,arousal)")
     ap.add_argument("--test_csv",   type=str, required=True,
                     help="CSV for test/validation split (same columns)")
-    ap.add_argument("--train_root", type=str, required=True,
+    ap.add_argument("--train_folder", type=str, required=True,
                     help="Folder with training images (paths in train_csv are relative to here)")
-    ap.add_argument("--test_root",  type=str, required=True,
+    ap.add_argument("--test_folder",  type=str, required=True,
                     help="Folder with test images (paths in test_csv are relative to here)")
+                    
     # model / training
     ap.add_argument("--nclasses",  type=int, default=8, choices=[5, 8], help="expression classes")
     ap.add_argument("--use_expr",  action="store_true",
@@ -313,7 +324,7 @@ if __name__ == "__main__":
     ap.add_argument("--weight_decay", type=float, default=1e-4)
     ap.add_argument("--lambda_expr",  type=float, default=1.0)
     ap.add_argument("--warmup_epochs", type=int, default=0,
-                    help="epochs to keep backbone frozen (already frozen by default)")
+                    help="epochs to keep backbone frozen (already frozen by default)") # not currently in use
     ap.add_argument("--unfreeze_backbone_after", type=int, default=0,
                     help="epoch to start unfreezing backbone (>0 enables). Example: 10")
     ap.add_argument("--outdir", type=str, default="runs/emonet_train")
