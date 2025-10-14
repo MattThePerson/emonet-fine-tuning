@@ -65,7 +65,7 @@ def mae(x, y):  return torch.mean(torch.abs(x - y))
 
 
 # Evaluation
-def evaluate(model: torch.nn.Module, loader: DataLoader, device: str, use_expr: bool=True):
+def evaluate_emonet(model: torch.nn.Module, loader: DataLoader, device: str, use_expr: bool=True):
     """
     Run validation over a loader and compute VA metrics (CCC/RMSE/MAE),
     plus expression accuracy if enabled.
@@ -138,22 +138,21 @@ def main(args: argparse.Namespace):
     # Run evaluation
     print("[MAIN] running evaluation ...")
     t0 = time.time()
-    vl = evaluate(model, data_loader, device, use_expr=True)
+    vl = evaluate_emonet(model, data_loader, device, use_expr=True)
     print("[MAIN] done. took {:.1f} sec".format(time.time()-t0))
 
     msg = (
-        "\nEVALUATION RESULTS:"
-        f"| ccc(V)={vl['ccc_v']:.3f} ccc(A)={vl['ccc_a']:.3f} mean={vl['ccc_mean']:.3f} "
-        f"rmse(V)={vl['rmse_v']:.3f} rmse(A)={vl['rmse_a']:.3f} "
-        f"mae(V)={vl['mae_v']:.3f} mae(A)={vl['mae_a']:.3f}"
-        f" | expr_acc={vl['expr_acc']:.3f}"
+        "params,ccc_v,ccc_a,ccc_mean,rmse_v,rmse_a,mae_v,mae_a,expr_acc\n"
+        f"{pretrained_params.name},"
+        f"{vl['ccc_v']:.4f},{vl['ccc_a']:.4f},{vl['ccc_mean']:.4f},"
+        f"{vl['rmse_v']:.4f},{vl['rmse_a']:.4f},"
+        f"{vl['mae_v']:.4f},{vl['mae_a']:.4f},{vl['expr_acc']:.4f}"
     )
     print(msg)
 
 
 
-
-
+#region CLI
 if __name__ == "__main__":
 
     ap = argparse.ArgumentParser()

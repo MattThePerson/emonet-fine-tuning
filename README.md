@@ -25,4 +25,5 @@ In order to run scripts in `scripts/` folder, recommended to run as modules:
 | SCRIPT | DESCRIPTION |
 | --- | --- |
 | `scripts/train_emonet.py` | Script for fine tuning EmoNet on dataset with compatible labels.  |
+| `scripts/evaluate_emonet.py` | Script for evaluating EmoNet given dataset and pretrained params.  |
 
