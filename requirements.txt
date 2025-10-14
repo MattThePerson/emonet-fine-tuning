@@ -1,5 +1,5 @@
 # FIRST install pytorch
-#   pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 # in Sep 2025. Versions installed:
 #   torch==2.8.0+cu126
 #   torchvision==0.23.0+cu126
