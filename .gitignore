@@ -1,0 +1,10 @@
+
+# default
+.vscode
+.venv
+__pycache__
+
+# custom
+media
+runs
+data

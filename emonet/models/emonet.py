@@ -121,6 +121,8 @@ class EmoNet(nn.Module):
             self.n_temporal_states = 5
             self.init_smoothing = True
             self.temporal_weights = torch.Tensor([0.1,0.1,0.15,0.25,0.4]).unsqueeze(0).unsqueeze(2).cuda() #Size (1,5,1)
+
+        # Initial feature extraction
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3)
         self.bn1 = nn.InstanceNorm2d(64)
         self.conv2 = ConvBlock(64, 128)
@@ -128,19 +130,17 @@ class EmoNet(nn.Module):
         self.conv4 = ConvBlock(128, 256)
 
         for hg_module in range(self.num_modules):
-            self.add_module('m' + str(hg_module), HourGlass(1, 4, 256))
-            self.add_module('top_m_' + str(hg_module), ConvBlock(256, 256))
-            self.add_module('conv_last' + str(hg_module),
-                            nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0))
-            self.add_module('bn_end' + str(hg_module), nn.InstanceNorm2d(256))
-            self.add_module('l' + str(hg_module), nn.Conv2d(256,
-                                                            68, kernel_size=1, stride=1, padding=0))
+            self.add_module('m' + str(hg_module),           HourGlass(1, 4, 256))
+            self.add_module('top_m_' + str(hg_module),      ConvBlock(256, 256))
+            self.add_module('conv_last' + str(hg_module),   nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0))
+            self.add_module('bn_end' + str(hg_module),      nn.InstanceNorm2d(256))
+            self.add_module('l' + str(hg_module),           nn.Conv2d(256, 68, kernel_size=1, stride=1, padding=0))
 
             if hg_module < self.num_modules - 1:
                 self.add_module(
                     'bl' + str(hg_module), nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0))
-                self.add_module('al' + str(hg_module), nn.Conv2d(68,
-                                                                 256, kernel_size=1, stride=1, padding=0))
+                self.add_module('al' + str(hg_module), nn.Conv2d(68, 256, kernel_size=1, stride=1, padding=0))
+                
         #Do not optimize the FAN
         for p in self.parameters():
             p.requires_grad = False
@@ -153,6 +153,7 @@ class EmoNet(nn.Module):
         
         n_features = [(256, 256)]*(n_blocks)
 
+        # Emotion Prediction Branch
         self.emo_convs = []
         self.conv1x1_input_emo_2 =nn.Conv2d(n_in_features, 256, kernel_size=1, stride=1, padding=0)
         for in_f, out_f in n_features:
@@ -162,7 +163,7 @@ class EmoNet(nn.Module):
         self.avg_pool_2 = nn.AvgPool2d(4)
         self.emo_fc_2 = nn.Sequential(nn.Linear(256, 128), nn.BatchNorm1d(128), nn.ReLU(inplace=True), nn.Linear(128, self.n_expression + n_reg))
 
-    def forward(self, x, reset_smoothing=False):
+    def forward(self, x, reset_smoothing=False) -> dict[str, torch.Tensor]:
         
         #Resets the temporal smoothing
         if self.init_smoothing:

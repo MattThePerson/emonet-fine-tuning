@@ -1,3 +1,4 @@
+from typing import Callable
 import numpy as np
 import torch
 
@@ -14,11 +15,20 @@ def evaluate_metrics(ground_truth, predictions, metrics, verbose=True, print_tex
     return results
 
 # Test loop
-def evaluate(net, dataloader, device, metrics_valence_arousal=None, metrics_expression=None, metrics_au=None, verbose=True, print_tex=False):
+def evaluate(
+        net: torch.nn.Module,
+        dataloader: torch.utils.data.DataLoader,
+        device: str,
+        metrics_valence_arousal: None|dict[str, Callable] =None,
+        metrics_expression: None|dict[str, Callable] =None,
+        metrics_au=None,
+        verbose=True,
+        print_tex=False
+    ):
     
     net.eval()
 
-    for index, data in enumerate(dataloader):
+    for idx, data in enumerate(dataloader):
         images = data['image'].to(device)
         valence = data.get('valence', None)
         arousal = data.get('arousal', None)
@@ -39,7 +49,7 @@ def evaluate(net, dataloader, device, metrics_valence_arousal=None, metrics_expr
             val = np.squeeze(val.cpu().numpy())
             ar = np.squeeze(ar.cpu().numpy())
 
-        if index:
+        if idx:
             if metrics_valence_arousal is not None:
                 valence_pred = np.concatenate([val, valence_pred])
                 arousal_pred = np.concatenate([ar,  arousal_pred])
@@ -59,7 +69,8 @@ def evaluate(net, dataloader, device, metrics_valence_arousal=None, metrics_expr
             if expression is not None:    
                 expression_pred = expr
                 expression_gts = expression
-            
+    # ENDFOR
+    
     if metrics_valence_arousal is not None:
         #Clip the predictions
         valence_pred = np.clip(valence_pred, -1.0,1.0)
@@ -93,7 +104,8 @@ def evaluate(net, dataloader, device, metrics_valence_arousal=None, metrics_expr
     else:
             return valence_results, arousal_results
 
-def evaluate_flip(net, dataloader_no_flip, dataloader_flip, device, metrics_valence_arousal=None, metrics_expression=None, metrics_au=None, verbose=True, print_tex=False):
+
+def evaluate_flip(net: torch.nn.Module, dataloader_no_flip, dataloader_flip, device, metrics_valence_arousal=None, metrics_expression=None, metrics_au=None, verbose=True, print_tex=False):
     
     net.eval()
 
