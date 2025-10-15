@@ -36,8 +36,8 @@ def ccc(x, y, eps=1e-8):
     """
     x = x.float(); y = y.float()
     xm, ym = x.mean(), y.mean()
-    xv, yv = x.var(unbiased=False), y.var(unbiased=False)
-    cov = ((x - xm) * (y - ym)).mean()
+    xv, yv = x.var(unbiased=False), y.var(unbiased=False) # variance
+    cov = ((x - xm) * (y - ym)).mean() # PCC * SD(x) * SD(y)
     return (2 * cov) / (xv + yv + (xm - ym) ** 2 + eps)
 
 def ccc_loss(x, y): return 1.0 - ccc(x, y)
