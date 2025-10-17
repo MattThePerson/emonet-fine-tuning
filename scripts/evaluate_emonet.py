@@ -17,15 +17,10 @@ CANONICAL_8 = ["neutral","happy","sad","surprise","fear","disgust","anger","cont
 CANONICAL_5 = ["neutral","happy","sad","surprise","fear"] 
 
 def build_fixed_label_map(nclasses: int):
-
-    if nclasses == 8:
-        order = CANONICAL_8
-    elif nclasses == 5:
-        order = CANONICAL_5
-    else:
-        raise ValueError("nclasses must be 5 or 8")
+    if nclasses == 8:   order = CANONICAL_8
+    elif nclasses == 5: order = CANONICAL_5
+    else:               raise ValueError("nclasses must be 5 or 8")
     return {name: i for i, name in enumerate(order)}
-
 
 def get_dataset_label2id(csv: str) -> dict|None:
     df_train = pd.read_csv(csv)

@@ -29,3 +29,13 @@ Possible causes:
 - poor annotation quality for arousal
 - arousal may be subtler and less consistenly expressed [citation?] 
 - 
+
+
+# Friday TODO
+
+- Send message to group
+- Send weights to Chengyi
+- Ask Sillah for emotic validation results
+- Ask if model visualization would be interesting for the presentation
+
+
