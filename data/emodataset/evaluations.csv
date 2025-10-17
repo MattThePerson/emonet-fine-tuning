@@ -5,3 +5,4 @@ emonet_8_15ep_scratch.pth,0.6694,0.1768,0.4231,0.5279,0.3837,0.3924,0.3129,0.583
 emonet_8_FT_5ep.pth,0.7502,0.3132,0.5317,0.4710,0.3419,0.3453,0.2826,0.7202,Fine-tuned (5 epochs)
 emonet_8_FT_5ep_mod.pth,0.7504,0.3078,0.5291,0.4707,0.6849,0.3441,0.5654,0.7219,Fine-tuned (5 epochs) AROUSAL_MOD
 emonet_8_FT_16ep.pth,0.7707,0.3234,0.5470,0.4490,0.3356,0.3218,0.2808,0.7335,Fine-tuned (16 epochs)
+emonet_8_finetuned.pth,0.7666,0.3223,0.5445,0.4544,0.3383,0.3198,0.2829,0.7350,Fine-tunes (backbone unfrozen)
