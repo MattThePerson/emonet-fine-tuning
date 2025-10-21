@@ -85,19 +85,19 @@ class HourGlass(nn.Module):
 
     def _forward(self, level, inp):
         up1 = inp
-        up1 = self._modules['b1_' + str(level)](up1)
+        up1 = self.get_module('b1_' + str(level))(up1)
 
         low1 = F.max_pool2d(inp, 2, stride=2)
-        low1 = self._modules['b2_' + str(level)](low1)
+        low1 = self.get_module('b2_' + str(level))(low1)
 
         if level > 1:
             low2 = self._forward(level - 1, low1)
         else:
             low2 = low1
-            low2 = self._modules['b2_plus_' + str(level)](low2)
+            low2 = self.get_module('b2_plus_' + str(level))(low2)
 
         low3 = low2
-        low3 = self._modules['b3_' + str(level)](low3)
+        low3 = self.get_module('b3_' + str(level))(low3)
 
         up2 = F.interpolate(low3, scale_factor=2, mode='nearest') 
 
@@ -105,6 +105,10 @@ class HourGlass(nn.Module):
 
     def forward(self, x):
         return self._forward(self.depth, x)
+    
+    def get_module(self, name: str) -> nn.Module:
+        """ to pass basic pylance type checking """
+        return self._modules[name] # type: ignore
 
 
 class EmoNet(nn.Module):
@@ -171,7 +175,7 @@ class EmoNet(nn.Module):
             self.init_smoothing = False
             self.temporal_state = torch.zeros(x.size(0), self.n_temporal_states, self.n_expression+self.n_reg).cuda()              
         if reset_smoothing:
-            self.temporal_state = self.temporal_state.zeros_() 
+            self.temporal_state = self.temporal_state.zeros_() # type: ignore
 
         # STAGE 1: initial feature extraction
         x = F.relu(self.bn1(self.conv1(x)), True)
@@ -184,19 +188,19 @@ class EmoNet(nn.Module):
         hg_features = []
 
         for i in range(self.num_modules):
-            hg = self._modules['m' + str(i)](previous)
+            hg = self.get_module('m' + str(i))(previous)
 
             ll = hg
-            ll = self._modules['top_m_' + str(i)](ll)
+            ll = self.get_module('top_m_' + str(i))(ll)
 
-            ll = F.relu(self._modules['bn_end' + str(i)]
-                        (self._modules['conv_last' + str(i)](ll)), True)
+            ll = F.relu(self.get_module('bn_end' + str(i))
+                        (self.get_module('conv_last' + str(i))(ll)), True)
 
-            tmp_out = self._modules['l' + str(i)](ll)
+            tmp_out = self.get_module('l' + str(i))(ll)
 
             if i < self.num_modules - 1:
-                ll = self._modules['bl' + str(i)](ll)
-                tmp_out_ = self._modules['al' + str(i)](tmp_out)
+                ll = self.get_module('bl' + str(i))(ll)
+                tmp_out_ = self.get_module('al' + str(i))(tmp_out)
                 previous = previous + ll + tmp_out_
 
             hg_features.append(ll)
@@ -228,6 +232,9 @@ class EmoNet(nn.Module):
 
   
     def eval(self):
-        
         for module in self.children():
             module.eval()
+
+    def get_module(self, name: str) -> nn.Module:
+        """ to pass basic pylance type checking """
+        return self._modules[name] # type: ignore
