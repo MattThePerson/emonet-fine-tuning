@@ -121,9 +121,9 @@ def evaluate(model, loader, device, use_expr):
     return metrics
 
 # One training epoch
-def train_one_epoch(model, loader, device, optimizer, scaler, use_expr, lambda_expr=1.0, epoch = 1, epochs = 1):
+def train_one_epoch(model, loader, device, optimizer, scaler, use_expr, va_loss_func=ccc_loss, lambda_expr=1.0, epoch=1, epochs=1):
     model.train()
-    ce = nn.CrossEntropyLoss() if use_expr else None
+    ce = nn.CrossEntropyLoss()
     running = {"loss": 0.0, "loss_va": 0.0, "loss_expr": 0.0}
     n = 0
 
@@ -133,12 +133,12 @@ def train_one_epoch(model, loader, device, optimizer, scaler, use_expr, lambda_e
         v = y["valence"].to(device)
         a = y["arousal"].to(device)
 
-        with torch.amp.autocast('cuda', enabled=scaler is not None):
+        with torch.amp.autocast('cuda', enabled=scaler is not None): # type: ignore
             out = model(x)
 
             # VA regression losses
-            loss_v = ccc_loss(out["valence"].view(-1), v)
-            loss_a = ccc_loss(out["arousal"].view(-1), a)
+            loss_v = va_loss_func(out["valence"].view(-1), v)
+            loss_a = va_loss_func(out["arousal"].view(-1), a)
             loss_va = loss_v + loss_a
             loss = loss_va
             if use_expr and "expression" in out and "expr" in y:
@@ -180,9 +180,21 @@ def unfreeze_backbone(model):
     print(f"Unfroze {unfrozen} params. Consider lowering LR.")
 
 
+CONTINUOUS_LOSS_FUNCS = {
+    "ccc_loss": ccc_loss,
+    "mse":      nn.MSELoss,
+    "mae":      nn.L1Loss,
+    "hubert":   nn.HuberLoss,
+}
 
 #region MAIN
 def main(args):
+
+    va_loss_func = CONTINUOUS_LOSS_FUNCS.get(args.va_loss_func)
+    if va_loss_func is None:
+        print('ERROR: no such loss function available:', args.va_loss_func)
+        return
+    print(f'Using {args.va_loss_func} as loss function for valence-arousal')
 
     set_seed(args.seed)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -211,7 +223,6 @@ def main(args):
     model = EmoNet(n_expression=args.nclasses).to(device)
 
     # load pretrained weights
-    
     if args.pretrained_params is None:
         res = input("\nWarning: no pretrained parameters passed, train model from scratch? (y)\n> ")
         if res not in ["y", "yes", "Y"]:
@@ -230,8 +241,9 @@ def main(args):
     # only train last layer by default
     trainable_params = [ p for p in model.parameters() if p.requires_grad ]
     optimizer = torch.optim.AdamW(trainable_params, lr=args.lr, weight_decay=args.weight_decay)
-    scaler = torch.amp.GradScaler('cuda') if (args.amp and device == "cuda") else None
+    scaler = torch.amp.GradScaler('cuda') if (args.amp and device == "cuda") else None  # type: ignore
 
+    # csv file
     outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
     best, best_path = -1e9, outdir / "ckpt_best.pth"
     log_csv = outdir / "metrics.csv"
@@ -330,6 +342,8 @@ if __name__ == "__main__":
     ap.add_argument("--outdir", type=str, default="runs/emonet_train")
     ap.add_argument("--amp", action="store_true")
     ap.add_argument("--labelmap_out", type=str, default="runs/label2id.json")
+    ap.add_argument("--va_loss_func", type=str, help="Loss function for valence-arousal (continuous)",
+                    choices=["ccc_loss", "mse", "mae", "hubert"], default="ccc_loss")
     args = ap.parse_args()
     
     main(args)

@@ -5,9 +5,11 @@ import time
 import torch
 from torch.utils.data import DataLoader
 
-
 from emonet.models import EmoNet
 from emonet.data import EmoNetCSV
+
+import numpy as np
+from sklearn.metrics import confusion_matrix
 
 
 #region LABELS
@@ -60,14 +62,15 @@ def mae(x, y):  return torch.mean(torch.abs(x - y))
 
 
 # Evaluation
-def evaluate_emonet(model: torch.nn.Module, loader: DataLoader, device: str, use_expr: bool=True):
+def evaluate_emonet(model: torch.nn.Module, loader: DataLoader, device: str, use_expr: bool=True) -> dict[str, float]:
     """
     Run validation over a loader and compute VA metrics (CCC/RMSE/MAE),
     plus expression accuracy if enabled.
     """
     model.eval()
     v_pred, v_true, a_pred, a_true = [], [], [], []
-    expr_correct, expr_total = 0, 0
+    # expr_correct, expr_total = 0, 0
+    expr_preds, expr_trues = [], []
     with torch.no_grad():
         for x, y in loader:
             x = x.to(device)
@@ -77,9 +80,12 @@ def evaluate_emonet(model: torch.nn.Module, loader: DataLoader, device: str, use
             v_pred.append(vp); a_pred.append(ap)
             v_true.append(y["valence"]); a_true.append(y["arousal"])
             if use_expr and "expression" in out and "expr" in y:
-                pred = out["expression"].argmax(1).cpu()
-                expr_correct += (pred == y["expr"]).sum().item()
-                expr_total += pred.numel()
+                preds = out["expression"].argmax(1).cpu()
+                # expr_correct += (pred == y["expr"]).sum().item()
+                # expr_total += pred.numel()
+                expr_preds.extend(preds)
+                expr_trues.extend(y["expr"].cpu())
+                
     v_pred = torch.cat(v_pred); v_true = torch.cat(v_true)
     a_pred = torch.cat(a_pred); a_true = torch.cat(a_true)
 
@@ -92,8 +98,16 @@ def evaluate_emonet(model: torch.nn.Module, loader: DataLoader, device: str, use
         "mae_a": mae(a_pred, a_true).item(),
     }
     metrics["ccc_mean"] = 0.5 * (metrics["ccc_v"] + metrics["ccc_a"])
-    if use_expr and expr_total > 0:
-        metrics["expr_acc"] = expr_correct / expr_total
+
+    # expression
+    cm = confusion_matrix(expr_trues, expr_preds)
+    total_acc = np.trace(cm) / np.sum(cm)
+    class_acc = np.diag(cm) / np.sum(cm, axis=1) # per class accuracy (axis=0 for precision)
+    
+    if use_expr:
+        metrics["expr_acc_total"] = total_acc
+        for i, acc in enumerate(class_acc):
+            metrics[f"expr_acc_{CANONICAL_8[i]}"] = acc # HUOM: Currently only works for 8 classes
     return metrics
 
 
@@ -136,14 +150,18 @@ def main(args: argparse.Namespace):
     vl = evaluate_emonet(model, data_loader, device, use_expr=True)
     print("[MAIN] done. took {:.1f} sec".format(time.time()-t0))
 
-    msg = (
-        "params,ccc_v,ccc_a,ccc_mean,rmse_v,rmse_a,mae_v,mae_a,expr_acc\n"
-        f"{pretrained_params.name},"
-        f"{vl['ccc_v']:.4f},{vl['ccc_a']:.4f},{vl['ccc_mean']:.4f},"
-        f"{vl['rmse_v']:.4f},{vl['rmse_a']:.4f},"
-        f"{vl['mae_v']:.4f},{vl['mae_a']:.4f},{vl['expr_acc']:.4f}"
-    )
-    print(msg)
+    # format results
+    keys_str = ''
+    values_str = ''
+    for i, (k, v) in enumerate(vl.items()):
+        keys_str += k
+        values_str += f'{v:.4f}'
+        if i < len(vl)-1:
+            keys_str += ','; values_str += ','
+    
+    print('\n  EVALUATION RESULTS:')
+    print(keys_str)
+    print(values_str)
 
 
 

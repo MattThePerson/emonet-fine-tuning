@@ -9,6 +9,7 @@ scikit-image==0.25.2
 face-alignment==1.4.1
 
 numpy==2.1.2
+scikit-learn
 pandas
 matplotlib
 tqdm # used for displaying progress bar

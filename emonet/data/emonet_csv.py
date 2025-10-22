@@ -22,7 +22,7 @@ class EmoNetCSV(Dataset):
         self.size = size
         self.use_expr = use_expr
         self.label2id = label2id or {}
-        self.augment = augment
+        # self.augment = augment
 
         required = ["pth", "valence", "arousal"]
         for c in required:
@@ -55,7 +55,7 @@ class EmoNetCSV(Dataset):
         if bgr is None:
             raise FileNotFoundError(img_path)
         bgr = cv2.resize(bgr, (self.size, self.size))
-        if self.augment: bgr = self._augment(bgr)
+        # if self.augment: bgr = self._augment(bgr)
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         x = torch.from_numpy(rgb).permute(2, 0, 1).float() / 255.0
 

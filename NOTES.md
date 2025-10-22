@@ -1,13 +1,14 @@
 
 # TODO
 
-
-- [train] try unfreezing backbone
-- [train] try training from checkpoint with lower lr
-- [model] get model structure/something to give Fajir
+- [validate] add true/false positives/negatives to script
+- 
 - [visualize] random samples from dataset, show predicted vs actual labels
 ?- [train] from scratch (unfreeze backbone)
 
+<!-- - [train] try unfreezing backbone -->
+<!-- - [train] try training from checkpoint with lower lr -->
+<!-- - [model] get model structure/something to give Fajir -->
 <!-- - [dataset] investigate dataset balance -->
 <!-- - [test] get test results of pretrained weights on Emodataset -->
 <!-- - [dataset] investigate valence/arousal values -->
